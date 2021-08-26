@@ -427,6 +427,34 @@ public class TestForGETMethod {
                 body("error.name", equalTo("paramMissingError")).
                 body("error.message", equalTo("Parameter is missing in the request."));
     }
+    @Test
+    public void testIfJsonObjectWithWrongParamsIsSent(){
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("param1", "value1");
+        given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(jsonObject).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("paramMissingError")).
+                body("error.message", equalTo("Parameter is missing in the request."));
+    }
+    @Test
+    public void testWhenStringIsSentInsteadOfJsonObject(){
+        String string = "Some basic string for testing.";
+            given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(string).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("SyntaxError")).
+                body("error.message", equalTo("Unexpected token S in JSON at position 0"));
+    }
+
 
 
     @Test
