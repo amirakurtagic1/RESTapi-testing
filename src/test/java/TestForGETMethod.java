@@ -1,3 +1,4 @@
+import com.google.gson.JsonObject;
 import com.google.gson.annotations.JsonAdapter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -9,6 +10,7 @@ import org.junit.After;
 import org.testng.annotations.Test;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -69,8 +71,8 @@ public class TestForGETMethod {
         Response response = given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
                 get("https://api.getpostman.com/collections");
 
-        response.then().body("collections.id", hasItems("25cf6b98-f24c-4e8b-8060-4d608562da0a", "6f411931-66e7-42c2-88a9-a86cbdcd89e8"));
-        response.then().body("collections.name", hasItems("Collection for testing 1", "Collection for testing 1"));
+        response.then().body("collections.id", hasItems("25cf6b98-f24c-4e8b-8060-4d608562da0a", "11579037-1b13b97f-dfa7-436e-973f-51471c88fe66"));
+        response.then().body("collections.name", hasItems("Collection for testing 1", "Sample Collection"));
         response.then().body("collections.owner", hasItems("11579037", "11579037"));
         response.then().body("collections.uid.size()", is(2));
     }
@@ -322,7 +324,7 @@ public class TestForGETMethod {
                 "    }\n" +
                 "}";
         JSONParser parser = new JSONParser();
-        json = (JSONObject) parser.parse(stringToParse);
+        JSONObject json = (JSONObject) parser.parse(stringToParse);
         given().
                 header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
                 header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
@@ -401,9 +403,9 @@ public class TestForGETMethod {
                 body("error.message", equalTo("Invalid API Key. Every request requires a valid API Key to be sent."));
     }
     @Test
-    public void testIfJsonObjectIsNotComplete(){
+    public void testIfJsonObjectIsNotComplete1(){
         JSONObject json = new JSONObject();
-        json.put("collections", "[]");
+        json.put("collection", "[]");
         given().
                 header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
                 header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
@@ -411,8 +413,43 @@ public class TestForGETMethod {
                 post("https://api.getpostman.com/collections").
                 then().
                 assertThat().
-                body("error.name", equalTo("paramMissingError")).
-                body("error.message", equalTo("Parameter is missing in the request."));
+                body("error.name", equalTo("malformedRequestError")).
+                body("error.message", equalTo("Found 1 errors with the supplied collection."));
+    }
+    @Test
+    public void testIfJsonObjectIsNotComplete2(){
+        JSONObject req = new JSONObject();
+        JSONObject item = new JSONObject();
+        JSONObject itemOfCollection = new JSONObject();
+        item.put("name", "GET Request");
+        req.put("url", "https://reqres.in/api/users?page=2");
+        req.put("method", "GET");
+        req.put("header", "{}");
+        req.put("description", "GET req for testing");
+
+        item.put("request", req);
+        itemOfCollection.put("name", "Folder");
+        itemOfCollection.put("item", item);
+        JSONObject collection = new JSONObject();
+        collection.put("item", itemOfCollection);
+
+        JSONObject json = new JSONObject();
+        json.put("collection", collection);
+
+        ArrayList<String> listOfErrors = new ArrayList<String>();
+        listOfErrors.add(": must have required property 'info'");
+        listOfErrors.add("item: must be array");
+
+            given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(json).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("malformedRequestError")).
+                body("error.message", equalTo("Found 2 errors with the supplied collection.")).
+                body("error.details", equalTo(listOfErrors));
     }
     @Test
     public void testWhenJsonObjectDoesNotHaveTheCorrectFormat(){
@@ -453,18 +490,6 @@ public class TestForGETMethod {
                 assertThat().
                 body("error.name", equalTo("SyntaxError")).
                 body("error.message", equalTo("Unexpected token S in JSON at position 0"));
-    }
-
-
-
-    @Test
-    public void deleteAddedCollections() throws ParseException {
-        Response response = given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
-                get("https://api.getpostman.com/collections");
-        System.out.println(response);
-        JSONParser parser = new JSONParser();
-        JSONObject json = (JSONObject) parser.parse(response.toString());
-        if(json.containsValue(LocalDate.now())) System.out.println(json.get("uid"));
     }
 
 
