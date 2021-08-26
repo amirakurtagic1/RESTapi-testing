@@ -7,6 +7,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.jupiter.api.BeforeAll;
 import org.testng.annotations.Test;
 
 import java.time.LocalDate;
@@ -17,11 +19,10 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.matcher.RestAssuredMatchers.*;
 import static org.hamcrest.Matchers.*;
 
-public class TestForGETMethod {
+public class TestsForPostmanAPIs {
 
     private String uidOfFirstAddedCollection;
     JSONObject json;
-
     @Test
     public void doesGetMethodExist() {
         given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
@@ -47,15 +48,6 @@ public class TestForGETMethod {
     }
 
     @Test
-    public void testResponseForGETMethod2() {
-        given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
-                get("https://api.getpostman.com/collections").
-                then().
-                assertThat().
-                body("collections.size()", is(2));
-    }
-
-    @Test
     public void testIfResponseHasAllParameters() {
         Response response = given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
                 get("https://api.getpostman.com/collections");
@@ -71,12 +63,11 @@ public class TestForGETMethod {
         Response response = given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
                 get("https://api.getpostman.com/collections");
 
-        response.then().body("collections.id", hasItems("25cf6b98-f24c-4e8b-8060-4d608562da0a", "11579037-1b13b97f-dfa7-436e-973f-51471c88fe66"));
-        response.then().body("collections.name", hasItems("Collection for testing 1", "Sample Collection"));
-        response.then().body("collections.owner", hasItems("11579037", "11579037"));
-        response.then().body("collections.uid.size()", is(2));
+        response.then().body("collections.id", hasItem("25cf6b98-f24c-4e8b-8060-4d608562da0a"));
+        response.then().body("collections.name", hasItem("Collection for testing 1"));
+        response.then().body("collections.owner", hasItem("11579037"));
+        //response.then().body("collections.uid.size()", is(2));
     }
-
     @Test
     public void testIfAPIKeyIsNotSent() {
 
@@ -88,7 +79,6 @@ public class TestForGETMethod {
                 body("error.message", equalTo("Invalid API Key. Every request requires a valid API Key to be sent."));
     }
     //GET single collection
-
     @Test
     public void testDoesResponseHaveCollection() {
 
@@ -99,7 +89,6 @@ public class TestForGETMethod {
                 assertThat().
                 body("collection", notNullValue());
     }
-
     @Test
     public void testDoesResponseHaveCollectionItems1() {
 
@@ -111,7 +100,6 @@ public class TestForGETMethod {
                 body("collection.info", notNullValue()).
                 body("collection.item", notNullValue());
     }
-
     @Test
     public void testDoesResponseHaveCollectionItems2() {
 
@@ -135,7 +123,41 @@ public class TestForGETMethod {
                 assertThat().
                 body("collection.item.size()", is(1));
     }
+    @Test
+    public void addCollectionWithPOSTMethodIfFormatIsNotOkay(){
 
+        JSONObject request = new JSONObject();
+        request.put("url", "https://reqres.in/api/users/2");
+        request.put("method", "GET");
+        request.put("header", emptyArray());
+        request.put("description", "This is GET request for users");
+
+        JSONObject itemDetails = new JSONObject();
+        itemDetails.put("name", "Folder");
+        itemDetails.put("request", request);
+        itemDetails.put("response", emptyArray());
+        JSONArray item = new JSONArray();
+        item.add(itemDetails);
+
+        JSONObject info = new JSONObject();
+        info.put("name", "Collection for testing");
+        info.put("description", "Collection for testing if POST method works fine");
+        info.put("schema", "https://schema.getpostman.com/json/collection/v2.0.0/collection.json");
+
+        JSONObject collection = new JSONObject();
+        collection.put("variables", emptyArray());
+        collection.put("info", info);
+        collection.put("item", item);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("collection", collection);
+
+        given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).body(jsonObject).when().
+                post("https://api.getpostman.com/collections").then().statusCode(400);
+
+    }
     @Test
     public void testForPOSTMEthod() {
         String stringToParse = "{\n" +
@@ -268,6 +290,7 @@ public class TestForGETMethod {
                 body("error.name", equalTo("AuthenticationError")).
                 body("error.message", equalTo("Invalid API Key. Every request requires a valid API Key to be sent."));
     }
+    //nece baciti izuzetak jer se uvijek sprema kao drugi id!
     @Test
     public void testIfCollectionAlreadyExists() throws ParseException {
         String stringToParse = "{\n" +
