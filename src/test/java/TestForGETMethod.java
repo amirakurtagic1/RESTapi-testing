@@ -1,10 +1,14 @@
+import com.google.gson.annotations.JsonAdapter;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.junit.After;
 import org.testng.annotations.Test;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -12,6 +16,9 @@ import static io.restassured.matcher.RestAssuredMatchers.*;
 import static org.hamcrest.Matchers.*;
 
 public class TestForGETMethod {
+
+    private String uidOfFirstAddedCollection;
+    JSONObject json;
 
     @Test
     public void doesGetMethodExist() {
@@ -126,7 +133,7 @@ public class TestForGETMethod {
                 assertThat().
                 body("collection.item.size()", is(1));
     }
-/*
+
     @Test
     public void testForPOSTMEthod() {
         String stringToParse = "{\n" +
@@ -184,17 +191,253 @@ public class TestForGETMethod {
                 "}";
         JSONParser parser = new JSONParser();
         try {
-            JSONObject json = (JSONObject) parser.parse(stringToParse);
+             json = (JSONObject) parser.parse(stringToParse);
             System.out.println(json.toString());
-            given().
+                    given().
                     header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
-                    post("https://api.getpostman.com/collections").
-                    then().
-                    assertThat().
-                    body("collection", notNullValue());
-
+                    header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).body(json).when().
+                    post("https://api.getpostman.com/collections").then().statusCode(200);
         } catch (ParseException e) {
             e.printStackTrace();
         }
-    }*/
+    }
+    @Test
+    public void testIfAPIKeyIsNotSentForPOSTMethod() throws ParseException {
+        String stringToParse = "{\n" +
+                "    \"collection\": {\n" +
+                "        \"variables\": [],\n" +
+                "        \"info\": {\n" +
+                "            \"_postman_id\": \"ac03df1d-90f0-401d-aa57-39c395253c80\",\n" +
+                "            \"name\": \"Sample Collection\",\n" +
+                "            \"description\": \"This is just a sample collection.\",\n" +
+                "            \"schema\": \"https://schema.getpostman.com/json/collection/v2.0.0/collection.json\"\n" +
+                "        },\n" +
+                "        \"item\": [\n" +
+                "            {\n" +
+                "                \"name\": \"This is a folder\",\n" +
+                "                \"description\": \"\",\n" +
+                "                \"item\": [\n" +
+                "                    {\n" +
+                "                        \"name\": \"Sample POST Request\",\n" +
+                "                        \"request\": {\n" +
+                "                            \"url\": \"echo.getpostman.com/post\",\n" +
+                "                            \"method\": \"POST\",\n" +
+                "                            \"header\": [\n" +
+                "                                {\n" +
+                "                                    \"key\": \"Content-Type\",\n" +
+                "                                    \"value\": \"application/json\",\n" +
+                "                                    \"description\": \"\"\n" +
+                "                                }\n" +
+                "                            ],\n" +
+                "                            \"body\": {\n" +
+                "                                \"mode\": \"raw\",\n" +
+                "                                \"raw\": \"{\\n\\t\\\"data\\\": \\\"123\\\"\\n}\"\n" +
+                "                            },\n" +
+                "                            \"description\": \"This is a sample POST Request\"\n" +
+                "                        },\n" +
+                "                        \"response\": []\n" +
+                "                    }\n" +
+                "                ]\n" +
+                "            },\n" +
+                "            {\n" +
+                "                \"name\": \"Sample GET Request\",\n" +
+                "                \"request\": {\n" +
+                "                    \"url\": \"echo.getpostman.com/get\",\n" +
+                "                    \"method\": \"GET\",\n" +
+                "                    \"header\": [],\n" +
+                "                    \"body\": {\n" +
+                "                        \"mode\": \"formdata\",\n" +
+                "                        \"formdata\": []\n" +
+                "                    },\n" +
+                "                    \"description\": \"This is a sample GET Request\"\n" +
+                "                },\n" +
+                "                \"response\": []\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }\n" +
+                "}";
+        JSONParser parser = new JSONParser();
+            json = (JSONObject) parser.parse(stringToParse);
+        given().
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).body(json).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("AuthenticationError")).
+                body("error.message", equalTo("Invalid API Key. Every request requires a valid API Key to be sent."));
+    }
+    @Test
+    public void testIfCollectionAlreadyExists() throws ParseException {
+        String stringToParse = "{\n" +
+                "    \"collection\": {\n" +
+                "        \"variables\": [],\n" +
+                "        \"info\": {\n" +
+                "            \"_postman_id\": \"ac03df1d-90f0-401d-aa57-39c395253c80\",\n" +
+                "            \"name\": \"Sample Collection\",\n" +
+                "            \"description\": \"This is just a sample collection.\",\n" +
+                "            \"schema\": \"https://schema.getpostman.com/json/collection/v2.0.0/collection.json\"\n" +
+                "        },\n" +
+                "        \"item\": [\n" +
+                "            {\n" +
+                "                \"name\": \"This is a folder\",\n" +
+                "                \"description\": \"\",\n" +
+                "                \"item\": [\n" +
+                "                    {\n" +
+                "                        \"name\": \"Sample POST Request\",\n" +
+                "                        \"request\": {\n" +
+                "                            \"url\": \"echo.getpostman.com/post\",\n" +
+                "                            \"method\": \"POST\",\n" +
+                "                            \"header\": [\n" +
+                "                                {\n" +
+                "                                    \"key\": \"Content-Type\",\n" +
+                "                                    \"value\": \"application/json\",\n" +
+                "                                    \"description\": \"\"\n" +
+                "                                }\n" +
+                "                            ],\n" +
+                "                            \"body\": {\n" +
+                "                                \"mode\": \"raw\",\n" +
+                "                                \"raw\": \"{\\n\\t\\\"data\\\": \\\"123\\\"\\n}\"\n" +
+                "                            },\n" +
+                "                            \"description\": \"This is a sample POST Request\"\n" +
+                "                        },\n" +
+                "                        \"response\": []\n" +
+                "                    }\n" +
+                "                ]\n" +
+                "            },\n" +
+                "            {\n" +
+                "                \"name\": \"Sample GET Request\",\n" +
+                "                \"request\": {\n" +
+                "                    \"url\": \"echo.getpostman.com/get\",\n" +
+                "                    \"method\": \"GET\",\n" +
+                "                    \"header\": [],\n" +
+                "                    \"body\": {\n" +
+                "                        \"mode\": \"formdata\",\n" +
+                "                        \"formdata\": []\n" +
+                "                    },\n" +
+                "                    \"description\": \"This is a sample GET Request\"\n" +
+                "                },\n" +
+                "                \"response\": []\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }\n" +
+                "}";
+        JSONParser parser = new JSONParser();
+        json = (JSONObject) parser.parse(stringToParse);
+        given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(json).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("instanceFoundError")).
+                body("error.message", equalTo("The specified item already exists."));
+    }
+    @Test
+    public void testIfAPIKeyIsNotRightForPOSTMethod() throws ParseException {
+        String stringToParse = "{\n" +
+                "    \"collection\": {\n" +
+                "        \"variables\": [],\n" +
+                "        \"info\": {\n" +
+                "            \"_postman_id\": \"ac03df1d-90f0-401d-aa57-39c395253c80\",\n" +
+                "            \"name\": \"Sample Collection\",\n" +
+                "            \"description\": \"This is just a sample collection.\",\n" +
+                "            \"schema\": \"https://schema.getpostman.com/json/collection/v2.0.0/collection.json\"\n" +
+                "        },\n" +
+                "        \"item\": [\n" +
+                "            {\n" +
+                "                \"name\": \"This is a folder\",\n" +
+                "                \"description\": \"\",\n" +
+                "                \"item\": [\n" +
+                "                    {\n" +
+                "                        \"name\": \"Sample POST Request\",\n" +
+                "                        \"request\": {\n" +
+                "                            \"url\": \"echo.getpostman.com/post\",\n" +
+                "                            \"method\": \"POST\",\n" +
+                "                            \"header\": [\n" +
+                "                                {\n" +
+                "                                    \"key\": \"Content-Type\",\n" +
+                "                                    \"value\": \"application/json\",\n" +
+                "                                    \"description\": \"\"\n" +
+                "                                }\n" +
+                "                            ],\n" +
+                "                            \"body\": {\n" +
+                "                                \"mode\": \"raw\",\n" +
+                "                                \"raw\": \"{\\n\\t\\\"data\\\": \\\"123\\\"\\n}\"\n" +
+                "                            },\n" +
+                "                            \"description\": \"This is a sample POST Request\"\n" +
+                "                        },\n" +
+                "                        \"response\": []\n" +
+                "                    }\n" +
+                "                ]\n" +
+                "            },\n" +
+                "            {\n" +
+                "                \"name\": \"Sample GET Request\",\n" +
+                "                \"request\": {\n" +
+                "                    \"url\": \"echo.getpostman.com/get\",\n" +
+                "                    \"method\": \"GET\",\n" +
+                "                    \"header\": [],\n" +
+                "                    \"body\": {\n" +
+                "                        \"mode\": \"formdata\",\n" +
+                "                        \"formdata\": []\n" +
+                "                    },\n" +
+                "                    \"description\": \"This is a sample GET Request\"\n" +
+                "                },\n" +
+                "                \"response\": []\n" +
+                "            }\n" +
+                "        ]\n" +
+                "    }\n" +
+                "}";
+        JSONParser parser = new JSONParser();
+        json = (JSONObject) parser.parse(stringToParse);
+        given().
+                header("x-api-key", "keyIsNotOkay").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(json).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("AuthenticationError")).
+                body("error.message", equalTo("Invalid API Key. Every request requires a valid API Key to be sent."));
+    }
+    @Test
+    public void testIfJsonObjectIsNotComplete(){
+        JSONObject json = new JSONObject();
+        json.put("collections", "[]");
+        given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(json).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("paramMissingError")).
+                body("error.message", equalTo("Parameter is missing in the request."));
+    }
+    @Test
+    public void testWhenJsonObjectDoesNotHaveTheCorrectFormat(){
+        JSONObject jsonObject = new JSONObject();
+        given().
+                header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                header("Content-Type", "application-json").contentType(ContentType.JSON).accept(ContentType.JSON).
+                body(jsonObject).when().
+                post("https://api.getpostman.com/collections").
+                then().
+                assertThat().
+                body("error.name", equalTo("paramMissingError")).
+                body("error.message", equalTo("Parameter is missing in the request."));
+    }
+
+
+    @Test
+    public void deleteAddedCollections() throws ParseException {
+        Response response = given().header("x-api-key", "PMAK-6120cb3f64806900461701d3-8f58352ba485bc5feb5730fc3044847824").
+                get("https://api.getpostman.com/collections");
+        System.out.println(response);
+        JSONParser parser = new JSONParser();
+        JSONObject json = (JSONObject) parser.parse(response.toString());
+        if(json.containsValue(LocalDate.now())) System.out.println(json.get("uid"));
+    }
+
+
 }
